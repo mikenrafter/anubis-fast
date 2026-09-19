@@ -1,46 +1,36 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
-  <title id="title">Anubis Fast fireball with a web globe cutout</title>
+  <title id="title">Anubis Fast fireball with globe cutout</title>
   <defs>
-    <linearGradient id="trail" x1="1" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#ffdf70"/>
-      <stop offset=".42" stop-color="#ff8a24"/>
-      <stop offset="1" stop-color="#df271f"/>
-    </linearGradient>
     <linearGradient id="fire" x1=".7" y1="0" x2=".2" y2="1">
-      <stop offset="0" stop-color="#ffca3a"/>
-      <stop offset=".48" stop-color="#ff6b22"/>
+      <stop offset="0" stop-color="#ffd95a"/>
+      <stop offset=".48" stop-color="#ff7b21"/>
       <stop offset="1" stop-color="#d92725"/>
     </linearGradient>
     <linearGradient id="globe" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#65d2ff"/>
-      <stop offset="1" stop-color="#2365b6"/>
+      <stop offset="0" stop-color="#79dcff"/>
+      <stop offset="1" stop-color="#2772c4"/>
     </linearGradient>
-    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
-      <feGaussianBlur stdDeviation="3" result="blur"/>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2.5" result="blur"/>
       <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
-    <clipPath id="globeClip"><circle cx="0" cy="0" r="20"/></clipPath>
+    <clipPath id="flame-front-clip">
+      <path d="M52 78L76 50L94 67L78 84Z"/>
+    </clipPath>
   </defs>
-
-  <!-- The flame trail points toward the upper-right. -->
-  <g fill="url(#trail)" filter="url(#glow)">
-    <path d="M73 52C87 44 96 28 91 10c13 8 22 20 20 33-2 10-10 17-20 21z"/>
-    <path d="M82 43c12-10 17-22 14-35 9 8 13 17 10 26-2 7-8 12-15 16z" opacity=".82"/>
-    <path d="M68 56c5-13 4-23-2-31 11 6 16 16 13 25-1 5-4 9-8 13z" opacity=".74"/>
+  <!-- SVG Repo fireball base, tilted along its upper-right to lower-left path. -->
+  <g id="fireball-base" transform="rotate(35 64 85) translate(8 4) scale(.22)" fill="url(#fire)" filter="url(#glow)">
+    <path d="M403.203,300.219c-5.172-16.688-12.25-33.969-19.234-47.563c-13.438-26.094-19.813-63.5-9.234-100.781c-15.984-3.344-32.844,8.344-32.297,27.828c0.578,19.953-13,37.953-31.719,31.719c-20.031-6.672-12.313-23.234,2.781-42.484c28.391-36.172-1.313-78.75-30-93.656c11.641,28.547-5.219,61.266-26.75,55.25c-23.938-6.656-23.938-34.5-2.797-55.641c30.359-30.344,2.234-54.297,6.141-74.891c-13.906,2.781-20.469,17.406-19.969,29.938c1.109,27.266-19.531,28.703-34.063,44.547c-17.219,18.766-23.75,42.641-11.094,66.641c26.719,50.625,12.563,77.594-14.703,71.469c-18.422-4.156-22.422-41.188-7.391-54.625c-27.156-1.031-41.906,24.516-41.703,62.422c0.109,20.547-8.766,49.453-21.641,78.984c-6.625,17.375-10.266,36.203-10.266,55.906C99.266,441.844,169.438,512,256,512s156.734-70.156,156.734-156.719C412.734,336.375,409.344,317,403.203,300.219z M256,472c-50.125,0-90.734-40.625-90.734-90.75c0-40.203,24.969-88.844,24.969-100.063c17.453,7.469,14.953,19.938,13.719,33.656c-0.578,6.266,2.484,13.109,6.859,15.281c3,2.281,7.531,2.969,11.594,2.969c9.969,0,18.016-8.063,18.016-18c0-3.188-0.891-6.125-2.328-8.703c-5.469-12.422-15.094-24.031-0.469-48.906c12.469-21.203,12.469-39.906,12.469-39.906s31.172,18.703,16.219,47.391c-7.781,14.891-6.016,25.953,0.719,32.625c4,4.781,9.938,7.906,16.656,7.906c2,0,3.875-0.375,5.719-0.875c0.844-0.141,1.625-0.391,2.375-0.719c0.203-0.094,0.406-0.156,0.594-0.25c0.125-0.063,0.219-0.125,0.344-0.188c7.469-3.438,12.719-10.938,12.719-19.719c0-3.016-0.625-5.875-1.734-8.5c0.016-0.188,0.016-0.313,0.016-0.313s43,23.703,43,106.313C346.719,431.375,306.094,472,256,472z"/>
+  </g>
+  <!-- SVG Repo globe-alt, enlarged and set on the fireball's lower-left edge. -->
+  <g transform="translate(26 58) scale(2.7)" fill="none" stroke="url(#globe)" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="9" fill="#122438" stroke="#ffe27a" stroke-width="1"/>
+    <path d="M3.5 11H6C7.10457 11 8 11.8954 8 13C8 14.1046 8.89543 15 10 15C11.1046 15 12 15.8954 12 17V20.5"/>
+    <path d="M8 4V5C8 6.10457 8.8954 7 10 7H10.1459C11.1699 7 12 7.83011 12 8.8541C12 9.55638 12.3968 10.1984 13.0249 10.5125L13.1056 10.5528C13.6686 10.8343 14.3314 10.8343 14.8944 10.5528L14.9751 10.5125C15.6032 10.1984 16 9.55638 16 8.8541C16 7.83011 16.8301 7 17.8541 7H19.5"/>
+    <path d="M16 19.5V17C16 15.8954 16.8954 15 18 15H20"/>
   </g>
 
-  <!-- Dense fireball mass, traveling down-left. -->
-  <path fill="url(#fire)" d="M57 112c-21 0-36-15-36-36 0-15 8-27 20-37-2 12 4 18 11 17 8-1 10-10 8-20 16 9 22 21 18 32 8-5 13-1 13 7 0 21-15 37-34 37z"/>
-  <path fill="#ffe27a" d="M58 105c-11 0-20-8-20-19 0-6 3-12 8-17-1 8 3 11 7 10 5-1 6-6 5-11 9 5 13 12 11 19 5-3 8 0 8 5 0 8-8 13-19 13z"/>
+  <!-- Only the upper flame subset is brought back in front of the globe. -->
+  <use href="#fireball-base" clip-path="url(#flame-front-clip)"/>
 
-  <!-- WWW globe cutout, centered on the fireball body rather than the trail. -->
-  <g transform="translate(55 78)">
-    <circle r="22" fill="#13273b" stroke="#ffe27a" stroke-width="2"/>
-    <g clip-path="url(#globeClip)" fill="none" stroke="url(#globe)" stroke-width="2.4">
-      <ellipse rx="9" ry="20"/>
-      <ellipse rx="20" ry="9"/>
-      <path d="M-20 0h40M0-20v40"/>
-    </g>
-    <circle r="20" fill="none" stroke="#8be1ff" stroke-width="1" opacity=".75"/>
-  </g>
 </svg>
