@@ -3,6 +3,10 @@
   "name": "Anubis Fast",
   "version": "0.1.0",
   "description": "Use a local native solver for proof-of-work challenge pages.",
+  "icons": {
+    "64": "icon.svg",
+    "128": "icon.svg"
+  },
   "browser_specific_settings": {
     "gecko": {
       "id": "anubis-fast@mikenrafter",
@@ -20,5 +24,12 @@
   ],
   "background": {
     "scripts": ["background.js"]
+  },
+  "browser_action": {
+    "default_icon": {
+      "64": "icon.svg",
+      "128": "icon.svg"
+    },
+    "default_title": "Anubis Fast"
   }
 }
