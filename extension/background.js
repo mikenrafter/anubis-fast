@@ -20,13 +20,25 @@ function connectHost() {
   host = browser.runtime.connectNative('anubis_fast');
   host.onMessage.addListener((message) => {
     console.info('[Anubis Fast] native message received', {
+      type: message?.type,
       id: message?.id,
       ok: message?.ok,
       status: message?.status,
       cookieCount: message?.cookies?.length || 0,
       hasCookiesField: Array.isArray(message?.cookies),
       error: message?.error,
+      protocol: message?.protocol,
+      hostPath: message?.host_path,
+      anubisFetch: message?.anubis_fetch,
     });
+    if (message?.type === 'ready') {
+      console.info('[Anubis Fast] native host ready', {
+        protocol: message.protocol,
+        hostPath: message.host_path,
+        anubisFetch: message.anubis_fetch,
+      });
+      return;
+    }
     const entry = pending.get(message.id);
     if (!entry) return;
     pending.delete(message.id);

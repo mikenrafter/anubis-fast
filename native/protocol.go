@@ -46,6 +46,9 @@ type response struct {
 	Cookies     []providers.Cookie `json:"cookies,omitempty"`
 	Error       string             `json:"error,omitempty"`
 	Protocol    string             `json:"protocol,omitempty"`
+	Type        string             `json:"type,omitempty"`
+	HostPath    string             `json:"host_path,omitempty"`
+	AnubisFetch string             `json:"anubis_fetch,omitempty"`
 }
 
 func readMessage(r io.Reader) ([]byte, error) {

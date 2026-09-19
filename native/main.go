@@ -21,6 +21,14 @@ func main() {
 		fatal(err)
 	}
 	logf("anubis-fast-host: ready; pid=%d anubis-fetch=%s", os.Getpid(), binary)
+	if err := writeMessage(os.Stdout, response{
+		Type:        "ready",
+		Protocol:    "cookies-v1",
+		HostPath:    executablePath(),
+		AnubisFetch: binary,
+	}); err != nil {
+		fatal(err)
+	}
 	for {
 		body, err := readMessage(os.Stdin)
 		if errors.Is(err, io.EOF) {
@@ -64,6 +72,14 @@ func main() {
 			fatal(err)
 		}
 	}
+}
+
+func executablePath() string {
+	path, err := os.Executable()
+	if err != nil {
+		return "unknown"
+	}
+	return path
 }
 
 func findBinary() (string, error) {
