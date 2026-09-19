@@ -62,7 +62,7 @@ function connectHost() {
 async function installCookies(message) {
   if (!message?.ok || !Array.isArray(message.cookies) || message.cookies.length === 0) return;
   const url = message.url;
-  await Promise.all(message.cookies.map((cookie) => browser.cookies.set({
+  const installed = await Promise.all(message.cookies.map((cookie) => browser.cookies.set({
     url,
     name: cookie.name,
     value: cookie.value,
@@ -72,8 +72,12 @@ async function installCookies(message) {
     ...(cookie.httpOnly !== undefined ? { httpOnly: cookie.httpOnly } : {}),
     ...(cookie.sameSite ? { sameSite: cookie.sameSite } : {}),
   })));
+  const visible = await browser.cookies.getAll({ url });
   console.info('[Anubis Fast] installed native cookies', {
-    count: message.cookies.length,
+    requested: message.cookies.length,
+    installed: installed.filter(Boolean).length,
+    visible: visible.length,
+    names: visible.map(({ name }) => name),
     url,
   });
 }
