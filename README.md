@@ -9,10 +9,16 @@ recognizes Anubis deny/interstitial pages by the `anubis_version` marker and
 the `/.within.website/` path. Detection starts at `document_start` and watches
 DOM mutations so Anubis's own solver does not win the race.
 
-It sends the URL and browser cookies to the native host over Firefox Native
-Messaging. The host runs the Go binary at `ANUBIS_FETCH_BIN`, receives the
-solved page, and sends the HTML back to the extension. The extension then
-replaces the challenge document with that HTML.
+It extracts the challenge JSON, browser User-Agent, and verification cookie
+from the challenge page. When the native host is available, those values go
+over Firefox Native Messaging to the Go solver. The host returns the solved
+cookies, which the extension installs before navigating normally.
+
+If the native host is unavailable, the extension falls back to its packaged
+first-party Go/WASM solver, then to a first-party JavaScript Web Crypto
+solver. The browser solver submits Anubis' pass-challenge URL directly so the
+browser receives the auth cookie itself. No challenge data or cookies leave
+the extension/browser except for the local native helper path.
 
 The content script logs to the protected page's DevTools console. The
 background script logs to Firefox's Browser Console (`Ctrl+Shift+J`).
@@ -26,6 +32,7 @@ detector under `extension/providers/` for another family such as Cloudflare.
 
 ```text
 extension/       Firefox WebExtension
+wasm/             First-party Go/WASM solver source
 native/          Go native-messaging host
 native/providers provider dispatch and PoW adapters
 ```
@@ -72,7 +79,7 @@ Register the native host for the Firefox profile in use:
 ```
 
 Then open `about:debugging#/runtime/this-firefox`, choose **Load Temporary
-Add-on**, and select `extension/manifest.json`.
+Add-on**, and select the generated XPI or `extension/manifest.json`.
 
 By default the native host only accepts requests from the extension ID
 `anubis-fast@mikenrafter`. Set `ANUBIS_FAST_EXTENSION_ID` before running the
@@ -97,3 +104,17 @@ so arbitrary HTML cannot corrupt the JSON frame.
 
 The provider field is intentionally explicit. A future Cloudflare adapter can
 use the same transport without adding Cloudflare logic to the Anubis code.
+
+## Solver backends
+
+The extension prefers the native backend for speed. Its portable fallback is
+deliberately maintained in this repository rather than imported from a third
+party: `wasm/main.go` is compiled into `extension/solvers/anubis-solver.wasm`
+by `npm run build:solver`, and `extension/solvers/javascript.js` is the final
+Web Crypto fallback. Both implement Anubis' `sha256(randomData + decimal
+nonce)` verifier directly.
+
+The manifest declares `websiteActivity` and `websiteContent` because the
+extension handles challenge pages, URLs, and cookies locally and may pass
+those values to the locally installed native helper. It does not send
+telemetry to a remote service.

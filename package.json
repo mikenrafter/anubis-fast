@@ -4,7 +4,8 @@
   "private": true,
   "description": "Anubis Fast Firefox extension and native messaging bridge",
   "scripts": {
-    "build:firefox": "web-ext build --source-dir extension --artifacts-dir dist --overwrite-dest",
+    "build:solver": "bash scripts/build-wasm.sh",
+    "build:firefox": "npm run build:solver && web-ext build --source-dir extension --artifacts-dir dist --overwrite-dest",
     "build:firefox:xpi": "npm run build:firefox && node -e \"const fs=require('node:fs');const path=require('node:path');const dist='dist';const zips=fs.readdirSync(dist).filter((file)=>file.endsWith('.zip')).sort();if(zips.length===0)throw new Error('No zip artifact found in dist');const zipPath=path.join(dist,zips.at(-1));const xpiPath=zipPath.replace(/\\.zip$/,'.xpi');fs.copyFileSync(zipPath,xpiPath);console.log('Created',xpiPath);\""
   },
   "devDependencies": {

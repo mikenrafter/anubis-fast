@@ -34,6 +34,10 @@ function handleChallenge() {
       return;
     }
 
+    if (response.browserNavigationUrl) {
+      console.info('[Anubis Fast] browser solver completed; background is navigating to pass endpoint');
+      return;
+    }
     if (response.cookies?.length) {
       console.info('[Anubis Fast] auth cookie installed; background is navigating to target', request.url);
       return;

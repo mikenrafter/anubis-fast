@@ -10,7 +10,10 @@ function getChallenge() {
   const script = document.querySelector('#anubis_challenge');
   if (!script?.textContent) return undefined;
   try {
-    return JSON.parse(script.textContent);
+    const challenge = JSON.parse(script.textContent);
+    const metadata = document.querySelector('#anubis_base_prefix');
+    if (metadata?.textContent) challenge.basePrefix = JSON.parse(metadata.textContent);
+    return challenge;
   } catch (error) {
     console.warn('[Anubis Fast] unable to parse Anubis challenge JSON', error);
     return undefined;

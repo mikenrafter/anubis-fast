@@ -2,6 +2,77 @@
 let host;
 const pending = new Map();
 
+function challengeFields(payload) {
+  const nested = payload?.challenge || payload || {};
+  const rules = payload?.rules || {};
+  return {
+    id: nested.id || payload?.id,
+    method: nested.method || payload?.method || rules.algorithm,
+    randomData: nested.randomData || payload?.randomData,
+    difficulty: nested.difficulty || payload?.difficulty || rules.difficulty,
+    basePrefix: payload?.basePrefix || '',
+  };
+}
+
+function solveWithWasm(randomData, difficulty) {
+  return new Promise((resolve, reject) => {
+    const worker = new Worker(browser.runtime.getURL('solvers/wasm-worker.js'));
+    const timer = setTimeout(() => {
+      worker.terminate();
+      reject(new Error('WASM solver timed out'));
+    }, 120_000);
+    worker.onmessage = (event) => {
+      if (event.data?.type === 'error') {
+        clearTimeout(timer);
+        worker.terminate();
+        reject(new Error(event.data.error));
+        return;
+      }
+      clearTimeout(timer);
+      worker.terminate();
+      resolve(event.data);
+    };
+    worker.onerror = (error) => {
+      clearTimeout(timer);
+      worker.terminate();
+      reject(error);
+    };
+    worker.postMessage([randomData, difficulty]);
+  });
+}
+
+async function solveInBrowser(message, tabId) {
+  const fields = challengeFields(message.challenge);
+  if (fields.method !== 'fast' || !fields.id || !fields.randomData || !fields.difficulty) {
+    throw new Error('browser solver only supports complete Anubis fast challenges');
+  }
+  const started = performance.now();
+  let solution;
+  try {
+    solution = await solveWithWasm(fields.randomData, fields.difficulty);
+  } catch (error) {
+    console.warn('[Anubis Fast] WASM solver unavailable; using JavaScript solver', error);
+    solution = await solveJavaScript(fields.randomData, fields.difficulty);
+  }
+  const elapsedTime = Math.max(1, Math.round(performance.now() - started));
+  const endpoint = new URL(message.url);
+  endpoint.pathname = `${fields.basePrefix.replace(/\/$/, '')}/.within.website/x/cmd/anubis/api/pass-challenge`;
+  endpoint.search = new URLSearchParams({
+    id: fields.id,
+    response: solution.digest,
+    nonce: String(solution.nonce),
+    redir: message.url,
+    elapsedTime: String(elapsedTime),
+  }).toString();
+  console.info('[Anubis Fast] browser solver completed', {
+    backend: solution.backend,
+    difficulty: fields.difficulty,
+    elapsedTime,
+  });
+  await browser.tabs.update(tabId, { url: endpoint.toString() });
+  return { ok: true, status: 200, browserNavigationUrl: endpoint.toString(), backend: solution.backend };
+}
+
 console.info('[Anubis Fast] background script loaded', {
   extensionId: browser.runtime.id,
 });
@@ -62,7 +133,11 @@ function connectHost() {
     const error = browser.runtime.lastError?.message || 'native host disconnected';
     console.error('[Anubis Fast] native host disconnected', error);
     host = undefined;
-    for (const entry of pending.values()) entry.resolve({ ok: false, error });
+    for (const entry of pending.values()) {
+      solveInBrowser(entry.request, entry.tabId).then(entry.resolve).catch((fallbackError) => {
+        entry.resolve({ ok: false, error: `${error}; browser fallback: ${fallbackError}` });
+      });
+    }
     pending.clear();
   });
   return host;
@@ -113,7 +188,13 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
     cookieStoreId,
   });
   return new Promise((resolve) => {
-    pending.set(id, { resolve, url: message.url, tabId: sender.tab?.id, cookieStoreId });
+    pending.set(id, {
+      resolve,
+      url: message.url,
+      tabId: sender.tab?.id,
+      cookieStoreId,
+      request: message,
+    });
     try {
       connectHost().postMessage({
         id,
