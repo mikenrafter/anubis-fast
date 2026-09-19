@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "Anubis Fast",
   "version": "0.1.0",
-  "description": "Use a local native solver for proof-of-work challenge pages.",
+  "description": "Solve Anubis proof-of-work challenges instantly, even with page JavaScript disabled (NoScript, uBlock Origin, AdNauseam).",
   "icons": {
     "64": "icon.svg",
     "128": "icon.svg"
