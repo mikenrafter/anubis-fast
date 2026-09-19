@@ -18,7 +18,7 @@ type Cookie struct {
 }
 
 type Provider interface {
-	Fetch(context.Context, string, string) (Result, error)
+	Fetch(context.Context, string, string, string, string) (Result, error)
 }
 
 func New(name, binary string) (Provider, error) {

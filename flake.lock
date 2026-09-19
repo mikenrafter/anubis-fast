@@ -9,11 +9,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1789808450,
-        "narHash": "sha256-iUMsltv6XaHVOry5o2EHOPjYuT8CKy2N+LLKI8Mly6c=",
+        "lastModified": 1789809852,
+        "narHash": "sha256-Z0ARlRUBvw7vB02w/VBAbvs4MzCXxdFrKKfSoQepCvY=",
         "owner": "mikenrafter",
         "repo": "anubis-fetch",
-        "rev": "ed8ba9e94a9ab59ffd132fba4822e80c16e5366a",
+        "rev": "989091860ddd2ad478578eed05132d52fd2ea926",
         "type": "github"
       },
       "original": {

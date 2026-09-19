@@ -12,8 +12,15 @@ function handleChallenge() {
     type: 'challenge',
     provider: 'anubis',
     url: new URL(window.location.href).searchParams.get('redir') || window.location.href,
+    challenge: getChallenge(),
+    userAgent: navigator.userAgent,
+    pageCookie: document.cookie,
   };
-  console.info('[Anubis Fast] challenge detected; requesting native solve', request);
+  console.info('[Anubis Fast] challenge detected; requesting native solve', {
+    ...request,
+    challenge: request.challenge ? 'present' : 'missing',
+    pageCookieLength: request.pageCookie.length,
+  });
   browser.runtime.sendMessage(request).then((response) => {
     console.info('[Anubis Fast] native response received', {
       ok: response?.ok,

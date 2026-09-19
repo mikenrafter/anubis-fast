@@ -27,11 +27,13 @@ func initLog() {
 }
 
 type request struct {
-	ID       string `json:"id"`
-	Type     string `json:"type"`
-	Provider string `json:"provider"`
-	URL      string `json:"url"`
-	Cookie   string `json:"cookie,omitempty"`
+	ID        string `json:"id"`
+	Type      string `json:"type"`
+	Provider  string `json:"provider"`
+	URL       string `json:"url"`
+	Cookie    string `json:"cookie,omitempty"`
+	Challenge string `json:"challenge,omitempty"`
+	UserAgent string `json:"user_agent,omitempty"`
 }
 
 type response struct {
@@ -43,6 +45,7 @@ type response struct {
 	BodyBase64  string             `json:"body_base64,omitempty"`
 	Cookies     []providers.Cookie `json:"cookies,omitempty"`
 	Error       string             `json:"error,omitempty"`
+	Protocol    string             `json:"protocol,omitempty"`
 }
 
 func readMessage(r io.Reader) ([]byte, error) {
@@ -85,6 +88,7 @@ func htmlResponse(id, provider string, status int, contentType string, body []by
 		ContentType: contentType,
 		BodyBase64:  base64.StdEncoding.EncodeToString(body),
 		Cookies:     cookies,
+		Protocol:    "cookies-v1",
 	}
 }
 

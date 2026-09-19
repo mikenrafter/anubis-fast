@@ -17,10 +17,16 @@ type Anubis struct {
 
 func NewAnubis(binary string) *Anubis { return &Anubis{binary: binary} }
 
-func (a *Anubis) Fetch(ctx context.Context, target, cookie string) (Result, error) {
+func (a *Anubis) Fetch(ctx context.Context, target, cookie, challenge, userAgent string) (Result, error) {
 	args := []string{"--no-browser", "--json"}
+	if userAgent != "" {
+		args = append(args, "--ua", userAgent)
+	}
 	if cookie != "" {
 		args = append(args, "--cookie", cookie)
+	}
+	if challenge != "" {
+		args = append(args, "--challenge", challenge)
 	}
 	args = append(args, target)
 	cmd := exec.CommandContext(ctx, a.binary, args...)

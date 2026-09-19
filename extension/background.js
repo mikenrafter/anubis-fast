@@ -74,10 +74,12 @@ browser.runtime.onMessage.addListener(async (message) => {
   });
   const id = crypto.randomUUID();
   const cookies = await browser.cookies.getAll({ url: message.url });
-  const cookie = cookies.map(({ name, value }) => `${name}=${value}`).join('; ');
+  const browserCookie = cookies.map(({ name, value }) => `${name}=${value}`).join('; ');
+  const cookie = [browserCookie, message.pageCookie].filter(Boolean).join('; ');
   console.info('[Anubis Fast] collected cookies', {
     count: cookies.length,
     headerLength: cookie.length,
+    pageCookieLength: message.pageCookie?.length || 0,
   });
   return new Promise((resolve) => {
     pending.set(id, { resolve, url: message.url });
@@ -85,9 +87,11 @@ browser.runtime.onMessage.addListener(async (message) => {
       connectHost().postMessage({
         id,
         type: 'fetch',
-        provider: message.provider,
-        url: message.url,
+      provider: message.provider,
+      url: message.url,
         cookie,
+        challenge: message.challenge ? JSON.stringify(message.challenge) : undefined,
+        user_agent: message.userAgent,
       });
       console.info('[Anubis Fast] request sent to native host', { id });
     } catch (error) {

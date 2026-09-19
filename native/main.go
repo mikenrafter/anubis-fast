@@ -36,7 +36,7 @@ func main() {
 			}
 			continue
 		}
-		logf("anubis-fast-host: request id=%s provider=%s url=%s cookie_bytes=%d", req.ID, req.Provider, req.URL, len(req.Cookie))
+		logf("anubis-fast-host: request id=%s provider=%s url=%s cookie_bytes=%d challenge_bytes=%d", req.ID, req.Provider, req.URL, len(req.Cookie), len(req.Challenge))
 		if req.Type != "fetch" || req.ID == "" || req.URL == "" {
 			if err := writeMessage(os.Stdout, errorResponse(req.ID, req.Provider, fmt.Errorf("request requires type=fetch, id, and url"))); err != nil {
 				fatal(err)
@@ -51,7 +51,7 @@ func main() {
 			continue
 		}
 		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
-		result, err := provider.Fetch(ctx, req.URL, req.Cookie)
+		result, err := provider.Fetch(ctx, req.URL, req.Cookie, req.Challenge, req.UserAgent)
 		cancel()
 		if err != nil {
 			logf("anubis-fast-host: request id=%s failed: %v", req.ID, err)
