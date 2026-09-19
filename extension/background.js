@@ -43,7 +43,16 @@ function connectHost() {
     if (!entry) return;
     pending.delete(message.id);
     const response = { ...message, url: entry.url };
-    installCookies(response).then(() => entry.resolve(response)).catch((error) => {
+    installCookies(response).then(async () => {
+      if (response.cookies?.length && entry.tabId !== undefined) {
+        console.info('[Anubis Fast] cookies installed; navigating tab', {
+          tabId: entry.tabId,
+          url: entry.url,
+        });
+        await browser.tabs.update(entry.tabId, { url: entry.url });
+      }
+      entry.resolve(response);
+    }).catch((error) => {
       console.error('[Anubis Fast] unable to install native cookies', error);
       entry.resolve({ ...response, ok: false, error: String(error) });
     });
@@ -82,7 +91,7 @@ async function installCookies(message) {
   });
 }
 
-browser.runtime.onMessage.addListener(async (message) => {
+browser.runtime.onMessage.addListener(async (message, sender) => {
   if (message?.type !== 'challenge') return undefined;
   console.info('[Anubis Fast] challenge request received', {
     provider: message.provider,
@@ -98,7 +107,7 @@ browser.runtime.onMessage.addListener(async (message) => {
     pageCookieLength: message.pageCookie?.length || 0,
   });
   return new Promise((resolve) => {
-    pending.set(id, { resolve, url: message.url });
+    pending.set(id, { resolve, url: message.url, tabId: sender.tab?.id });
     try {
       connectHost().postMessage({
         id,

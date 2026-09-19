@@ -35,8 +35,7 @@ function handleChallenge() {
     }
 
     if (response.cookies?.length) {
-      console.info('[Anubis Fast] auth cookie installed; navigating to target', request.url);
-      window.location.replace(request.url);
+      console.info('[Anubis Fast] auth cookie installed; background is navigating to target', request.url);
       return;
     }
 
