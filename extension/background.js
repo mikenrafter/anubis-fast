@@ -42,7 +42,7 @@ function connectHost() {
     const entry = pending.get(message.id);
     if (!entry) return;
     pending.delete(message.id);
-    const response = { ...message, url: entry.url };
+    const response = { ...message, url: entry.url, cookieStoreId: entry.cookieStoreId };
     installCookies(response).then(async () => {
       if (response.cookies?.length && entry.tabId !== undefined) {
         console.info('[Anubis Fast] cookies installed; navigating tab', {
@@ -71,8 +71,10 @@ function connectHost() {
 async function installCookies(message) {
   if (!message?.ok || !Array.isArray(message.cookies) || message.cookies.length === 0) return;
   const url = message.url;
+  const cookieOptions = message.cookieStoreId ? { storeId: message.cookieStoreId } : {};
   const installed = await Promise.all(message.cookies.map((cookie) => browser.cookies.set({
     url,
+    ...cookieOptions,
     name: cookie.name,
     value: cookie.value,
     path: cookie.path || '/',
@@ -81,12 +83,13 @@ async function installCookies(message) {
     ...(cookie.httpOnly !== undefined ? { httpOnly: cookie.httpOnly } : {}),
     ...(cookie.sameSite ? { sameSite: cookie.sameSite } : {}),
   })));
-  const visible = await browser.cookies.getAll({ url });
+  const visible = await browser.cookies.getAll({ url, ...cookieOptions });
   console.info('[Anubis Fast] installed native cookies', {
     requested: message.cookies.length,
     installed: installed.filter(Boolean).length,
     visible: visible.length,
     names: visible.map(({ name }) => name),
+    cookieStoreId: message.cookieStoreId,
     url,
   });
 }
@@ -98,16 +101,19 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
     url: message.url,
   });
   const id = crypto.randomUUID();
-  const cookies = await browser.cookies.getAll({ url: message.url });
+  const cookieStoreId = sender.tab?.cookieStoreId;
+  const cookieOptions = cookieStoreId ? { storeId: cookieStoreId } : {};
+  const cookies = await browser.cookies.getAll({ url: message.url, ...cookieOptions });
   const browserCookie = cookies.map(({ name, value }) => `${name}=${value}`).join('; ');
   const cookie = [browserCookie, message.pageCookie].filter(Boolean).join('; ');
   console.info('[Anubis Fast] collected cookies', {
     count: cookies.length,
     headerLength: cookie.length,
     pageCookieLength: message.pageCookie?.length || 0,
+    cookieStoreId,
   });
   return new Promise((resolve) => {
-    pending.set(id, { resolve, url: message.url, tabId: sender.tab?.id });
+    pending.set(id, { resolve, url: message.url, tabId: sender.tab?.id, cookieStoreId });
     try {
       connectHost().postMessage({
         id,
