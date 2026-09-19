@@ -1,6 +1,29 @@
 /* global browser */
 let host;
 const pending = new Map();
+let solverMode = 'native';
+const solverModes = ['native', 'wasm', 'javascript'];
+
+function setSolverBadge() {
+  const text = solverMode === 'native' ? 'N' : solverMode === 'wasm' ? 'W' : 'JS';
+  browser.browserAction.setBadgeText({ text });
+  browser.browserAction.setBadgeBackgroundColor({
+    color: solverMode === 'native' ? '#2772c4' : solverMode === 'wasm' ? '#8a3ffc' : '#d97706',
+  });
+}
+
+browser.storage.local.get('solverMode').then((stored) => {
+  if (solverModes.includes(stored.solverMode)) solverMode = stored.solverMode;
+  setSolverBadge();
+  console.info('[Anubis Fast] solver mode', solverMode);
+});
+
+browser.browserAction.onClicked.addListener(async () => {
+  solverMode = solverModes[(solverModes.indexOf(solverMode) + 1) % solverModes.length];
+  await browser.storage.local.set({ solverMode });
+  setSolverBadge();
+  console.info('[Anubis Fast] solver mode changed', solverMode);
+});
 
 function challengeFields(payload) {
   const nested = payload?.challenge || payload || {};
@@ -16,6 +39,7 @@ function challengeFields(payload) {
 
 function solveWithWasm(randomData, difficulty) {
   return new Promise((resolve, reject) => {
+    console.info('[Anubis Fast] WASM worker started', { difficulty, randomDataLength: randomData.length });
     const worker = new Worker(browser.runtime.getURL('solvers/wasm-worker.js'));
     const timer = setTimeout(() => {
       worker.terminate();
@@ -48,11 +72,21 @@ async function solveInBrowser(message, tabId) {
   }
   const started = performance.now();
   let solution;
-  try {
-    solution = await solveWithWasm(fields.randomData, fields.difficulty);
-  } catch (error) {
-    console.warn('[Anubis Fast] WASM solver unavailable; using JavaScript solver', error);
+  console.info('[Anubis Fast] browser solver started', {
+    requestedBackend: solverMode,
+    method: fields.method,
+    difficulty: fields.difficulty,
+    randomDataLength: fields.randomData.length,
+  });
+  if (solverMode === 'javascript') {
     solution = await solveJavaScript(fields.randomData, fields.difficulty);
+  } else {
+    try {
+      solution = await solveWithWasm(fields.randomData, fields.difficulty);
+    } catch (error) {
+      console.warn('[Anubis Fast] WASM solver unavailable; using JavaScript solver', error);
+      solution = await solveJavaScript(fields.randomData, fields.difficulty);
+    }
   }
   const elapsedTime = Math.max(1, Math.round(performance.now() - started));
   const endpoint = new URL(message.url);
@@ -68,6 +102,7 @@ async function solveInBrowser(message, tabId) {
     backend: solution.backend,
     difficulty: fields.difficulty,
     elapsedTime,
+    nonce: solution.nonce,
   });
   await browser.tabs.update(tabId, { url: endpoint.toString() });
   return { ok: true, status: 200, browserNavigationUrl: endpoint.toString(), backend: solution.backend };
@@ -76,8 +111,7 @@ async function solveInBrowser(message, tabId) {
 console.info('[Anubis Fast] background script loaded', {
   extensionId: browser.runtime.id,
 });
-browser.browserAction.setBadgeText({ text: 'ON' });
-browser.browserAction.setBadgeBackgroundColor({ color: '#2772c4' });
+setSolverBadge();
 browser.notifications.create({
   type: 'basic',
   title: 'Anubis Fast loaded',
@@ -187,6 +221,14 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
     pageCookieLength: message.pageCookie?.length || 0,
     cookieStoreId,
   });
+  if (solverMode !== 'native') {
+    try {
+      return await solveInBrowser(message, sender.tab?.id);
+    } catch (error) {
+      console.error('[Anubis Fast] forced browser solver failed', error);
+      return { ok: false, error: String(error) };
+    }
+  }
   return new Promise((resolve) => {
     pending.set(id, {
       resolve,
