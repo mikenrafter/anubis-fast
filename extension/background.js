@@ -209,6 +209,14 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
     provider: message.provider,
     url: message.url,
   });
+  if (sender.tab?.id !== undefined) {
+    const fields = challengeFields(message.challenge);
+    browser.tabs.sendMessage(sender.tab.id, {
+      type: 'solver-status',
+      solver: solverMode,
+      difficulty: fields.difficulty,
+    }).catch(() => {});
+  }
   const id = crypto.randomUUID();
   const cookieStoreId = sender.tab?.cookieStoreId;
   const cookieOptions = cookieStoreId ? { storeId: cookieStoreId } : {};

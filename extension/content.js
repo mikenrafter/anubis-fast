@@ -5,14 +5,50 @@ console.info('[Anubis Fast] content script loaded', {
   readyState: document.readyState,
 });
 
+function showSolverStatus(solver, difficulty) {
+  const names = {
+    native: 'Native',
+    wasm: 'Web Assembly',
+    javascript: 'JavaScript',
+  };
+  const label = names[solver] || solver || 'browser';
+  const message = `FAST ANUBIS solver using ${label} solver at difficulty ${difficulty || '?'}... Please stand by.`;
+  const image = document.querySelector('#image');
+  if (image) {
+    image.src = browser.runtime.getURL('icon.svg');
+    image.alt = 'Anubis Fast solver';
+  }
+  const title = document.querySelector('#title');
+  if (title) title.textContent = 'FAST ANUBIS';
+  const status = document.querySelector('#status');
+  if (status) {
+    status.textContent = message;
+    status.style.display = 'block';
+  }
+  const scriptError = document.querySelector('#anubis-script-error');
+  if (scriptError) {
+    scriptError.textContent = message;
+    scriptError.style.display = 'block';
+  }
+  const noScriptMessage = document.querySelector('noscript p');
+  if (noScriptMessage) noScriptMessage.textContent = message;
+  console.info('[Anubis Fast] challenge display updated', { solver: label, difficulty, message });
+}
+
+browser.runtime.onMessage.addListener((message) => {
+  if (message?.type === 'solver-status') showSolverStatus(message.solver, message.difficulty);
+});
+
 function handleChallenge() {
   if (window.__anubisFastHandled || !detectAnubis()) return;
   window.__anubisFastHandled = true;
+  const challenge = getChallenge();
+  showSolverStatus('native', challenge?.challenge?.difficulty || challenge?.rules?.difficulty);
   const request = {
     type: 'challenge',
     provider: 'anubis',
     url: new URL(window.location.href).searchParams.get('redir') || window.location.href,
-    challenge: getChallenge(),
+    challenge,
     userAgent: navigator.userAgent,
     pageCookie: document.cookie,
   };
