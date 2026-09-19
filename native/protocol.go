@@ -7,7 +7,24 @@ import (
 	"fmt"
 	"io"
 	"os"
+
+	"slaughter.pro/anubis-fast/native/providers"
 )
+
+var logOutput io.Writer = os.Stderr
+
+func initLog() {
+	path := os.Getenv("ANUBIS_FAST_LOG")
+	if path == "" {
+		path = "/tmp/anubis-fast-host.log"
+	}
+	file, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "anubis-fast-host: cannot open log %s: %v\n", path, err)
+		return
+	}
+	logOutput = io.MultiWriter(os.Stderr, file)
+}
 
 type request struct {
 	ID       string `json:"id"`
@@ -18,13 +35,14 @@ type request struct {
 }
 
 type response struct {
-	ID          string `json:"id"`
-	OK          bool   `json:"ok"`
-	Provider    string `json:"provider,omitempty"`
-	Status      int    `json:"status,omitempty"`
-	ContentType string `json:"content_type,omitempty"`
-	BodyBase64  string `json:"body_base64,omitempty"`
-	Error       string `json:"error,omitempty"`
+	ID          string             `json:"id"`
+	OK          bool               `json:"ok"`
+	Provider    string             `json:"provider,omitempty"`
+	Status      int                `json:"status,omitempty"`
+	ContentType string             `json:"content_type,omitempty"`
+	BodyBase64  string             `json:"body_base64,omitempty"`
+	Cookies     []providers.Cookie `json:"cookies,omitempty"`
+	Error       string             `json:"error,omitempty"`
 }
 
 func readMessage(r io.Reader) ([]byte, error) {
@@ -61,14 +79,15 @@ func errorResponse(id, provider string, err error) response {
 	return response{ID: id, OK: false, Provider: provider, Error: err.Error()}
 }
 
-func htmlResponse(id, provider string, status int, contentType string, body []byte) response {
+func htmlResponse(id, provider string, status int, contentType string, body []byte, cookies []providers.Cookie) response {
 	return response{
 		ID: id, OK: true, Provider: provider, Status: status,
 		ContentType: contentType,
 		BodyBase64:  base64.StdEncoding.EncodeToString(body),
+		Cookies:     cookies,
 	}
 }
 
 func logf(format string, args ...any) {
-	_, _ = fmt.Fprintf(os.Stderr, format+"\n", args...)
+	_, _ = fmt.Fprintf(logOutput, format+"\n", args...)
 }

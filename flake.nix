@@ -58,7 +58,15 @@
         packages.host = host;
 
         devShells.default = pkgs.mkShell {
-          packages = [ pkgs.go ];
+          packages = [
+            pkgs.go
+            pkgs.nodejs_22
+            pkgs.web-ext
+          ];
+
+          shellHook = ''
+            echo "Anubis Fast dev shell ready: npm install && npm run build:firefox"
+          '';
         };
 
       })

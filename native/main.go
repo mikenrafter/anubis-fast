@@ -15,10 +15,12 @@ import (
 )
 
 func main() {
+	initLog()
 	binary, err := findBinary()
 	if err != nil {
 		fatal(err)
 	}
+	logf("anubis-fast-host: ready; pid=%d anubis-fetch=%s", os.Getpid(), binary)
 	for {
 		body, err := readMessage(os.Stdin)
 		if errors.Is(err, io.EOF) {
@@ -34,6 +36,7 @@ func main() {
 			}
 			continue
 		}
+		logf("anubis-fast-host: request id=%s provider=%s url=%s cookie_bytes=%d", req.ID, req.Provider, req.URL, len(req.Cookie))
 		if req.Type != "fetch" || req.ID == "" || req.URL == "" {
 			if err := writeMessage(os.Stdout, errorResponse(req.ID, req.Provider, fmt.Errorf("request requires type=fetch, id, and url"))); err != nil {
 				fatal(err)
@@ -51,9 +54,11 @@ func main() {
 		result, err := provider.Fetch(ctx, req.URL, req.Cookie)
 		cancel()
 		if err != nil {
+			logf("anubis-fast-host: request id=%s failed: %v", req.ID, err)
 			err = writeMessage(os.Stdout, errorResponse(req.ID, req.Provider, err))
 		} else {
-			err = writeMessage(os.Stdout, htmlResponse(req.ID, req.Provider, result.Status, result.ContentType, result.Body))
+			logf("anubis-fast-host: request id=%s solved status=%d bytes=%d", req.ID, result.Status, len(result.Body))
+			err = writeMessage(os.Stdout, htmlResponse(req.ID, req.Provider, result.Status, result.ContentType, result.Body, result.Cookies))
 		}
 		if err != nil {
 			fatal(err)

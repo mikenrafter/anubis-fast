@@ -1,20 +1,52 @@
 /* global browser */
 
-if (!window.__anubisFastHandled && detectAnubis()) {
+console.info('[Anubis Fast] content script loaded', {
+  url: window.location.href,
+  readyState: document.readyState,
+});
+
+function handleChallenge() {
+  if (window.__anubisFastHandled || !detectAnubis()) return;
   window.__anubisFastHandled = true;
-  browser.runtime.sendMessage({
+  const request = {
     type: 'challenge',
     provider: 'anubis',
     url: new URL(window.location.href).searchParams.get('redir') || window.location.href,
-  }).then((response) => {
-    if (!response || !response.ok || !response.body) return;
-    const decoded = atob(response.body);
-    const bytes = Uint8Array.from(decoded, (character) => character.charCodeAt(0));
-    const html = new TextDecoder().decode(bytes);
-    document.open();
-    document.write(html);
-    document.close();
-  }).catch(() => {
+  };
+  console.info('[Anubis Fast] challenge detected; requesting native solve', request);
+  browser.runtime.sendMessage(request).then((response) => {
+    console.info('[Anubis Fast] native response received', {
+      ok: response?.ok,
+      status: response?.status,
+      error: response?.error,
+      hasBody: Boolean(response?.body_base64),
+      cookieCount: response?.cookies?.length || 0,
+    });
+    if (!response || !response.ok) {
+      window.__anubisFastHandled = false;
+      return;
+    }
+
+    if (response.cookies?.length) {
+      console.info('[Anubis Fast] auth cookie installed; navigating to target', request.url);
+      window.location.replace(request.url);
+      return;
+    }
+
+    if (!response.body_base64) {
+      console.error('[Anubis Fast] solve returned neither cookies nor a page body');
+      window.__anubisFastHandled = false;
+      return;
+    }
+    console.info('[Anubis Fast] no auth cookie returned; using solved page fallback');
+    window.location.replace(request.url);
+  }).catch((error) => {
+    console.error('[Anubis Fast] native solve request failed', error);
     window.__anubisFastHandled = false;
   });
 }
+
+handleChallenge();
+const observer = new MutationObserver(handleChallenge);
+observer.observe(document, { childList: true, subtree: true });
+setTimeout(() => observer.disconnect(), 30_000);

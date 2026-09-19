@@ -9,6 +9,12 @@ type Result struct {
 	Status      int
 	ContentType string
 	Body        []byte
+	Cookies     []Cookie
+}
+
+type Cookie struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
 }
 
 type Provider interface {

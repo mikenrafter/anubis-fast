@@ -1,2 +1,4 @@
 /anubis-fast-host
 /result
+/node_modules
+/dist

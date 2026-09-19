@@ -3,11 +3,19 @@
 Firefox extension and native host for using the local `anubis-fetch` Go
 binary to clear proof-of-work pages.
 
-The extension detects an Anubis challenge in the active tab. It sends the URL
-to the native host over Firefox Native Messaging. The host runs the Go binary
-at `ANUBIS_FETCH_BIN`, receives the solved page, and sends the HTML back to
-the extension. The extension then replaces the challenge document with that
-HTML.
+The extension detects an Anubis challenge in the active tab by looking for the
+`<script id="anubis_challenge" type="application/json">` marker. It also
+recognizes Anubis deny/interstitial pages by the `anubis_version` marker and
+the `/.within.website/` path. Detection starts at `document_start` and watches
+DOM mutations so Anubis's own solver does not win the race.
+
+It sends the URL and browser cookies to the native host over Firefox Native
+Messaging. The host runs the Go binary at `ANUBIS_FETCH_BIN`, receives the
+solved page, and sends the HTML back to the extension. The extension then
+replaces the challenge document with that HTML.
+
+The content script logs to the protected page's DevTools console. The
+background script logs to Firefox's Browser Console (`Ctrl+Shift+J`).
 
 The browser code does not know how Anubis solves its challenge. A provider
 registry separates detection and page replacement from the protocol used by a
