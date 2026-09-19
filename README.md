@@ -240,3 +240,13 @@ Anubis code path.
 No challenge data, cookies, or browsing activity are sent anywhere except
 locally, over the native-messaging pipe to `anubis-fast-host` on the same
 machine. There is no remote telemetry.
+
+---
+
+## Credits
+
+The extension icon (`extension/icon.svg`) is composited from two icons by
+[SVG Repo](https://www.svgrepo.com/):
+
+- [Globe Alt](https://www.svgrepo.com/svg/508084/globe-alt)
+- [Fireball 3](https://www.svgrepo.com/svg/478806/fireball-3)
