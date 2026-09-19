@@ -9,7 +9,34 @@
   };
 
   outputs = { self, nixpkgs, flake-utils, anubis-fetch, ... }:
-    flake-utils.lib.eachDefaultSystem (system:
+    let
+      homeModule = { config, lib, pkgs, ... }:
+        let
+          cfg = config.programs.anubis-fast;
+          package = self.packages.${pkgs.system}.default;
+        in {
+          options.programs.anubis-fast = {
+            enable = lib.mkEnableOption "Anubis Fast native messaging host";
+            extensionId = lib.mkOption {
+              type = lib.types.str;
+              default = "anubis-fast@slaughter.pro";
+              description = "Firefox extension ID allowed to use the native host.";
+            };
+          };
+
+          config = lib.mkIf cfg.enable {
+            home.packages = [ package ];
+            home.file.".mozilla/native-messaging-hosts/anubis_fast.json".text = builtins.toJSON {
+              name = "anubis_fast";
+              description = "Native Anubis proof-of-work bridge";
+              path = "${package}/bin/anubis-fast-host";
+              type = "stdio";
+              allowed_extensions = [ cfg.extensionId ];
+            };
+          };
+        };
+    in
+    (flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs { inherit system; };
         host = pkgs.buildGoModule {
@@ -34,29 +61,8 @@
           packages = [ pkgs.go ];
         };
 
-        homeModules.default = { config, lib, pkgs, ... }:
-          let
-            cfg = config.programs.anubis-fast;
-          in {
-            options.programs.anubis-fast = {
-              enable = lib.mkEnableOption "Anubis Fast native messaging host";
-              extensionId = lib.mkOption {
-                type = lib.types.str;
-                default = "anubis-fast@slaughter.pro";
-                description = "Firefox extension ID allowed to use the native host.";
-              };
-            };
-
-            config = lib.mkIf cfg.enable {
-              home.packages = [ package ];
-              home.file.".mozilla/native-messaging-hosts/anubis_fast.json".text = builtins.toJSON {
-                name = "anubis_fast";
-                description = "Native Anubis proof-of-work bridge";
-                path = "${package}/bin/anubis-fast-host";
-                type = "stdio";
-                allowed_extensions = [ cfg.extensionId ];
-              };
-            };
-          };
-      });
+      })
+    ) // {
+      homeModules.default = homeModule;
+    };
 }
