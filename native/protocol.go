@@ -1,0 +1,74 @@
+package main
+
+import (
+	"encoding/base64"
+	"encoding/binary"
+	"encoding/json"
+	"fmt"
+	"io"
+	"os"
+)
+
+type request struct {
+	ID       string `json:"id"`
+	Type     string `json:"type"`
+	Provider string `json:"provider"`
+	URL      string `json:"url"`
+	Cookie   string `json:"cookie,omitempty"`
+}
+
+type response struct {
+	ID          string `json:"id"`
+	OK          bool   `json:"ok"`
+	Provider    string `json:"provider,omitempty"`
+	Status      int    `json:"status,omitempty"`
+	ContentType string `json:"content_type,omitempty"`
+	BodyBase64  string `json:"body_base64,omitempty"`
+	Error       string `json:"error,omitempty"`
+}
+
+func readMessage(r io.Reader) ([]byte, error) {
+	var length uint32
+	if err := binary.Read(r, binary.LittleEndian, &length); err != nil {
+		return nil, err
+	}
+	if length == 0 || length > 64<<20 {
+		return nil, fmt.Errorf("invalid native-message length %d", length)
+	}
+	body := make([]byte, length)
+	if _, err := io.ReadFull(r, body); err != nil {
+		return nil, err
+	}
+	return body, nil
+}
+
+func writeMessage(w io.Writer, value response) error {
+	body, err := json.Marshal(value)
+	if err != nil {
+		return err
+	}
+	if len(body) > 64<<20 {
+		return fmt.Errorf("native-message response is too large")
+	}
+	if err := binary.Write(w, binary.LittleEndian, uint32(len(body))); err != nil {
+		return err
+	}
+	_, err = w.Write(body)
+	return err
+}
+
+func errorResponse(id, provider string, err error) response {
+	return response{ID: id, OK: false, Provider: provider, Error: err.Error()}
+}
+
+func htmlResponse(id, provider string, status int, contentType string, body []byte) response {
+	return response{
+		ID: id, OK: true, Provider: provider, Status: status,
+		ContentType: contentType,
+		BodyBase64:  base64.StdEncoding.EncodeToString(body),
+	}
+}
+
+func logf(format string, args ...any) {
+	_, _ = fmt.Fprintf(os.Stderr, format+"\n", args...)
+}
