@@ -19,7 +19,7 @@
             enable = lib.mkEnableOption "Anubis Fast native messaging host";
             extensionId = lib.mkOption {
               type = lib.types.str;
-              default = "anubis-fast@slaughter.pro";
+                default = "anubis-fast@mikenrafter";
               description = "Firefox extension ID allowed to use the native host.";
             };
           };

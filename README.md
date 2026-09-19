@@ -67,7 +67,7 @@ Then open `about:debugging#/runtime/this-firefox`, choose **Load Temporary
 Add-on**, and select `extension/manifest.json`.
 
 By default the native host only accepts requests from the extension ID
-`anubis-fast@slaughter.pro`. Set `ANUBIS_FAST_EXTENSION_ID` before running the
+`anubis-fast@mikenrafter`. Set `ANUBIS_FAST_EXTENSION_ID` before running the
 installer if you use another ID.
 
 For the local `slaughter.pro` stack, start the site from its checkout and

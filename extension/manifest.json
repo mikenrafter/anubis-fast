@@ -5,7 +5,7 @@
   "description": "Use a local native solver for proof-of-work challenge pages.",
   "browser_specific_settings": {
     "gecko": {
-      "id": "anubis-fast@slaughter.pro",
+      "id": "anubis-fast@mikenrafter",
       "strict_min_version": "109.0"
     }
   },
