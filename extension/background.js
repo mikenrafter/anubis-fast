@@ -24,6 +24,7 @@ function connectHost() {
       ok: message?.ok,
       status: message?.status,
       cookieCount: message?.cookies?.length || 0,
+      hasCookiesField: Array.isArray(message?.cookies),
       error: message?.error,
     });
     const entry = pending.get(message.id);

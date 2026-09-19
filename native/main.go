@@ -57,7 +57,7 @@ func main() {
 			logf("anubis-fast-host: request id=%s failed: %v", req.ID, err)
 			err = writeMessage(os.Stdout, errorResponse(req.ID, req.Provider, err))
 		} else {
-			logf("anubis-fast-host: request id=%s solved status=%d bytes=%d", req.ID, result.Status, len(result.Body))
+			logf("anubis-fast-host: request id=%s solved status=%d bytes=%d cookies=%d", req.ID, result.Status, len(result.Body), len(result.Cookies))
 			err = writeMessage(os.Stdout, htmlResponse(req.ID, req.Provider, result.Status, result.ContentType, result.Body, result.Cookies))
 		}
 		if err != nil {

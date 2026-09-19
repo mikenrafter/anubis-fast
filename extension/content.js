@@ -33,13 +33,11 @@ function handleChallenge() {
       return;
     }
 
-    if (!response.body_base64) {
-      console.error('[Anubis Fast] solve returned neither cookies nor a page body');
-      window.__anubisFastHandled = false;
-      return;
-    }
-    console.info('[Anubis Fast] no auth cookie returned; using solved page fallback');
-    window.location.replace(request.url);
+    console.error('[Anubis Fast] native solve returned no cookies; refusing to reload', {
+      hasCookiesField: Array.isArray(response.cookies),
+      hasBody: Boolean(response.body_base64),
+    });
+    window.__anubisFastHandled = false;
   }).catch((error) => {
     console.error('[Anubis Fast] native solve request failed', error);
     window.__anubisFastHandled = false;
