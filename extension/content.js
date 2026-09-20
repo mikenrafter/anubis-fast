@@ -9,6 +9,7 @@ function showSolverStatus(solver, difficulty) {
   const names = {
     native: 'Native',
     wasm: 'Web Assembly',
+    spoof: 'User-Agent spoof',
     javascript: 'JavaScript',
   };
   const label = names[solver] || solver || 'browser';

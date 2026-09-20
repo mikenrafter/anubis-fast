@@ -2,13 +2,32 @@
 let host;
 const pending = new Map();
 let solverMode = 'native';
-const solverModes = ['native', 'wasm', 'javascript'];
+const solverModes = ['native', 'wasm', 'spoof', 'javascript'];
+const spoofRequests = new Map();
+const browserFallbacks = new Map();
+
+function generateSpoofedUserAgent() {
+  const alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const length = Math.round(Math.random() * 16) + 16;
+  let userAgent = '';
+  for (let index = 0; index < length; index += 1) {
+    userAgent += Math.random() > 0.8
+      ? ' '
+      : alphabet[Math.floor(Math.random() * alphabet.length)];
+  }
+  if (userAgent.toLowerCase().includes('bot')) return generateSpoofedUserAgent();
+  return userAgent;
+}
 
 function setSolverBadge() {
-  const text = solverMode === 'native' ? 'N' : solverMode === 'wasm' ? 'W' : 'JS';
+  const text = solverMode === 'native' ? 'N'
+    : solverMode === 'wasm' ? 'W'
+      : solverMode === 'spoof' ? 'UA' : 'JS';
   browser.browserAction.setBadgeText({ text });
   browser.browserAction.setBadgeBackgroundColor({
-    color: solverMode === 'native' ? '#2772c4' : solverMode === 'wasm' ? '#8a3ffc' : '#d97706',
+    color: solverMode === 'native' ? '#2772c4'
+      : solverMode === 'wasm' ? '#8a3ffc'
+        : solverMode === 'spoof' ? '#0f766e' : '#d97706',
   });
 }
 
@@ -65,6 +84,68 @@ function solveWithWasm(randomData, difficulty) {
   });
 }
 
+function solveWithUserAgentSpoof(url, tabId) {
+  if (tabId === undefined) throw new Error('UA spoof requires a browser tab');
+  return new Promise((resolve, reject) => {
+    const request = {
+      url,
+      userAgent: generateSpoofedUserAgent(),
+      resolve,
+      reject,
+      timer: setTimeout(() => {
+        spoofRequests.delete(tabId);
+        reject(new Error('UA spoof navigation timed out'));
+      }, 15_000),
+    };
+    spoofRequests.set(tabId, request);
+    console.info('[Anubis Fast] trying one-shot User-Agent spoof', {
+      tabId,
+      url,
+    });
+    browser.tabs.update(tabId, { url }).catch((error) => {
+      clearTimeout(request.timer);
+      spoofRequests.delete(tabId);
+      reject(error);
+    });
+  });
+}
+
+browser.webRequest.onBeforeSendHeaders.addListener(
+  (details) => {
+    if (details.type !== 'main_frame') return undefined;
+    const request = spoofRequests.get(details.tabId);
+    if (!request || request.url !== details.url) return undefined;
+    spoofRequests.delete(details.tabId);
+    clearTimeout(request.timer);
+    request.resolve({
+      ok: true,
+      status: 200,
+      backend: 'user-agent-spoof',
+      userAgent: request.userAgent,
+      browserNavigationUrl: request.url,
+    });
+    const userAgentHeader = details.requestHeaders.find(
+      (header) => header.name.toLowerCase() === 'user-agent',
+    );
+    if (userAgentHeader) userAgentHeader.value = request.userAgent;
+    else details.requestHeaders.push({ name: 'User-Agent', value: request.userAgent });
+    return { requestHeaders: details.requestHeaders };
+  },
+  { urls: ['https://*/*'], types: ['main_frame'] },
+  ['blocking', 'requestHeaders'],
+);
+
+function fallbackKey(tabId, url) {
+  return `${tabId}:${url}`;
+}
+
+function markJavaScriptFallback(key) {
+  browserFallbacks.set(key, 'javascript');
+  setTimeout(() => {
+    if (browserFallbacks.get(key) === 'javascript') browserFallbacks.delete(key);
+  }, 30_000);
+}
+
 async function solveInBrowser(message, tabId) {
   const fields = challengeFields(message.challenge);
   if (fields.method !== 'fast' || !fields.id || !fields.randomData || !fields.difficulty) {
@@ -72,20 +153,38 @@ async function solveInBrowser(message, tabId) {
   }
   const started = performance.now();
   let solution;
+  const key = fallbackKey(tabId, message.url);
+  const javascriptFallbackPending = browserFallbacks.get(key) === 'javascript';
   console.info('[Anubis Fast] browser solver started', {
     requestedBackend: solverMode,
     method: fields.method,
     difficulty: fields.difficulty,
     randomDataLength: fields.randomData.length,
   });
-  if (solverMode === 'javascript') {
+  if (solverMode === 'javascript' || javascriptFallbackPending) {
+    browserFallbacks.delete(key);
     solution = await solveJavaScript(fields.randomData, fields.difficulty);
+  } else if (solverMode === 'spoof') {
+    markJavaScriptFallback(key);
+    try {
+      return await solveWithUserAgentSpoof(message.url, tabId);
+    } catch (error) {
+      console.warn('[Anubis Fast] User-Agent spoof could not start; using JavaScript solver', error);
+      browserFallbacks.delete(key);
+      solution = await solveJavaScript(fields.randomData, fields.difficulty);
+    }
   } else {
     try {
       solution = await solveWithWasm(fields.randomData, fields.difficulty);
     } catch (error) {
-      console.warn('[Anubis Fast] WASM solver unavailable; using JavaScript solver', error);
-      solution = await solveJavaScript(fields.randomData, fields.difficulty);
+      console.warn('[Anubis Fast] WASM solver unavailable; trying User-Agent spoof', error);
+      try {
+        markJavaScriptFallback(key);
+        return await solveWithUserAgentSpoof(message.url, tabId);
+      } catch (spoofError) {
+        console.warn('[Anubis Fast] User-Agent spoof did not clear the challenge; using JavaScript solver', spoofError);
+        solution = await solveJavaScript(fields.randomData, fields.difficulty);
+      }
     }
   }
   const elapsedTime = Math.max(1, Math.round(performance.now() - started));

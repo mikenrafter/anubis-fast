@@ -21,7 +21,7 @@ In other words: you can keep JavaScript off for the sites Anubis fronts and stil
 ## Demo
 
 <details>
-<summary>Solver speed: Native vs WASM vs JavaScript</summary>
+<summary>Solver speed: Native vs WASM vs User-Agent spoof vs JavaScript</summary>
 
 <!-- TODO: record and embed comparison GIF, e.g. ./product-page/demo-solver-speed.gif -->
 
@@ -29,7 +29,8 @@ In other words: you can keep JavaScript off for the sites Anubis fronts and stil
 | --- | --- | --- |
 | Native | _TBD_ | Shells out to `anubis-fetch`; no browser-side hashing loop. |
 | WASM | _TBD_ | Go/WASM worker, runs entirely in-tab. |
-| JavaScript | _TBD_ | Web Crypto fallback, slowest of the three. |
+| User-Agent spoof | _TBD_ | Tries one non-browser User-Agent before doing proof-of-work in JavaScript. |
+| JavaScript | _TBD_ | Web Crypto fallback. |
 
 </details>
 
@@ -63,10 +64,15 @@ to solve it. The background script tries, in order:
    isn't selected), a packaged Go/WASM solver runs in a Web Worker and
    submits Anubis' `pass-challenge` endpoint directly from the tab, so the
    browser receives the auth cookie itself.
-3. **JavaScript** — a Web Crypto fallback used if the WASM worker fails to
-   load, or if JavaScript mode is explicitly selected.
+3. **User-Agent spoof** — if WASM fails, Anubis Fast makes one retry with a
+   random non-browser User-Agent. Some Anubis deployments let requests with
+   non-browser User-Agents through without a proof-of-work challenge. This is
+   also available as a selectable solver mode named `UA`.
+4. **JavaScript** — a Web Crypto fallback used if the WASM worker and the
+   one-shot User-Agent spoof both fail, or if JavaScript mode is explicitly
+   selected.
 
-All three solvers implement the same Anubis "fast" verifier: find a `nonce`
+The Native, WASM, and JavaScript solvers implement the same Anubis "fast" verifier: find a `nonce`
 such that `hex(sha256(randomData + decimal nonce))` starts with `difficulty`
 zero characters.
 
@@ -76,10 +82,11 @@ native-messaging pipe to the native host — there is no remote telemetry.
 ## Solver mode toggle
 
 Click the toolbar icon to cycle the active solver backend: **N**ative → **W**asm
-→ **JS** → back to Native. The badge shows the current mode and color, and the
-choice persists in `browser.storage.local`. If native mode is selected but the
-host disconnects mid-request, pending requests automatically retry with the
-browser (WASM/JS) solver.
+→ **UA** spoof → **JS** → back to Native. The badge shows the current mode and
+color, and the choice persists in `browser.storage.local`. If native mode is
+selected but the host disconnects mid-request, pending requests automatically
+retry with the browser solver. The browser fallback tries WASM, then one UA
+spoof, then JavaScript.
 
 ## Logging
 
@@ -244,6 +251,11 @@ machine. There is no remote telemetry.
 ---
 
 ## Credits
+
+The User-Agent spoof fallback is based on the approach used by
+[zipdox/anubis-bypass](https://gitlab.com/zipdox/anubis-bypass/). It retries a
+challenged host with a random non-browser User-Agent so Anubis deployments
+that classify requests by User-Agent may pass it through.
 
 The extension icon (`extension/icon.svg`) is composited from two icons by
 [SVG Repo](https://www.svgrepo.com/):
