@@ -5,10 +5,15 @@
   "description": "Anubis Fast Firefox extension and native messaging bridge",
   "scripts": {
     "build:solver": "bash scripts/build-wasm.sh",
-    "build:firefox": "npm run build:solver && web-ext build --source-dir extension --artifacts-dir dist --overwrite-dest",
+    "typecheck": "tsc --noEmit",
+    "build:extension": "bash scripts/build-extension.sh",
+    "check": "npm run typecheck",
+    "build:firefox": "npm run build:solver && npm run build:extension && web-ext build --source-dir build/extension --artifacts-dir dist --overwrite-dest",
     "build:firefox:xpi": "npm run build:firefox && node -e \"const fs=require('node:fs');const path=require('node:path');const dist='dist';const zips=fs.readdirSync(dist).filter((file)=>file.endsWith('.zip')).sort();if(zips.length===0)throw new Error('No zip artifact found in dist');const zipPath=path.join(dist,zips.at(-1));const xpiPath=zipPath.replace(/\\.zip$/,'.xpi');fs.copyFileSync(zipPath,xpiPath);console.log('Created',xpiPath);\""
   },
   "devDependencies": {
+    "@types/firefox-webext-browser": "^120.0.0",
+    "typescript": "^5.7.2",
     "web-ext": "^8.9.0"
   }
 }

@@ -2,5 +2,6 @@
 /result
 /node_modules
 /dist
+/build
 /extension/solvers/anubis-solver.wasm
 /extension/solvers/wasm_exec.js

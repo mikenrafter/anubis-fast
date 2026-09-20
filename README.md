@@ -146,13 +146,20 @@ helper. Nothing is sent to a remote service.
 ## Build
 
 Build the extension bundle (compiles the WASM solver, then packages with
-`web-ext`):
+TypeScript and `web-ext`):
 
 ```sh
 npm install
 npm run build:firefox       # -> dist/anubis_fast-<version>.zip
 npm run build:firefox:xpi   # also copies the zip to dist/anubis_fast-<version>.xpi
 ```
+
+The extension source lives in TypeScript under `extension/`. `npm run typecheck`
+uses strict compiler settings and is the check-in gate.
+
+With [devenv](https://devenv.sh/) installed, enter the project environment with
+`devenv shell`. It provides Node, Go, and `web-ext`, and installs the TypeScript
+pre-commit check through devenv's git-hook integration.
 
 Build the native host with the Go toolchain used by `../anubis-fetch`:
 
