@@ -40,18 +40,20 @@ function showSolverStatus(solver: string, difficulty?: number): void {
   }
   const title = document.querySelector<HTMLElement>('#title');
   if (title) title.textContent = 'FAST ANUBIS';
-  const status = document.querySelector<HTMLElement>('#status');
-  if (status) {
-    status.textContent = message;
-    status.style.display = 'block';
-  }
-  const scriptError = document.querySelector<HTMLElement>('#anubis-script-error');
-  if (scriptError) {
-    scriptError.textContent = message;
-    scriptError.style.display = 'block';
-  }
-  const noScriptMessage = document.querySelector<HTMLElement>('noscript p');
-  if (noScriptMessage) noScriptMessage.textContent = message;
+  // Anubis has several places for this message: #status, the script-error box
+  // and a <noscript> notice. With page JavaScript off all of them render, so
+  // show the message in the first one present and hide the rest.
+  const placeholders = ['#status', '#anubis-script-error', 'noscript p']
+    .map((selector) => document.querySelector<HTMLElement>(selector))
+    .filter((element): element is HTMLElement => element !== null);
+  placeholders.forEach((element, index) => {
+    if (index === 0) {
+      element.textContent = message;
+      element.style.display = 'block';
+    } else {
+      element.style.display = 'none';
+    }
+  });
   console.info('[Anubis Fast] challenge display updated', { solver: label, difficulty, message });
 }
 

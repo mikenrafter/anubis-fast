@@ -55,6 +55,7 @@ describe('page JavaScript disabled', () => {
 			// The challenge page comes first, relabelled by the content script.
 			let sawChallenge = false
 			let sawStatus = false
+			let statusCopies = 0
 			const deadline = Date.now() + 60_000
 			while (Date.now() < deadline) {
 				const page = await selectedPage(session)
@@ -62,6 +63,7 @@ describe('page JavaScript disabled', () => {
 					sawChallenge = true
 					const text = await pageText(session).catch(() => '')
 					if (text.includes('FAST ANUBIS')) sawStatus = true
+					statusCopies = Math.max(statusCopies, text.split('FAST ANUBIS solver using').length - 1)
 				}
 				if (page.title === SITE_TITLE && !page.loading) break
 				await new Promise((done) => setTimeout(done, 50))
@@ -69,6 +71,8 @@ describe('page JavaScript disabled', () => {
 			await waitForTitle(session, SITE_TITLE, 1_000)
 			expect(sawChallenge).toBe(true)
 			expect(sawStatus).toBe(true)
+			// One status line, not one per Anubis placeholder (#status, the script-error box, <noscript>).
+			expect(statusCopies).toBe(1)
 			expect((await selectedPage(session)).url).toBe(SITE_URL)
 			expect(await pageText(session)).toContain('Anubis Fast solved its proof-of-work challenge')
 			const cookies = await session.chrome(`
