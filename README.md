@@ -21,23 +21,32 @@ In other words: you can keep JavaScript off for the sites Anubis fronts and stil
 ## Demo
 
 <details>
-<summary>Solver speed: Native vs WASM vs User-Agent spoof vs JavaScript</summary>
+<summary>Solving a challenge with page JavaScript disabled</summary>
 
-<!-- TODO: record and embed comparison GIF, e.g. ./product-page/demo-solver-speed.gif -->
+![Page JavaScript is turned off in about:config. Opening a site behind Anubis shows the challenge page, which Anubis Fast takes over and solves; the site then loads.](./product-page/demo-no-js.gif)
 
-| Solver | Median solve time | Notes |
-| --- | --- | --- |
-| Native | _TBD_ | Shells out to `anubis-fetch`; no browser-side hashing loop. |
-| WASM | _TBD_ | Go/WASM worker, runs entirely in-tab. |
-| User-Agent spoof | _TBD_ | Tries one non-browser User-Agent before doing proof-of-work in JavaScript. |
-| JavaScript | _TBD_ | Web Crypto fallback. |
+Page JavaScript is off (`javascript.enabled` is `false` in `about:config`), so Anubis' own challenge script never runs. Anubis Fast's content script takes over the challenge page, the WASM solver finds the answer, and the site loads. The site is a local page behind a real Anubis 1.27.0, set to difficulty 5 here so the challenge page stays up long enough to see.
 
 </details>
 
 <details>
-<summary>Solving a challenge with page JavaScript disabled</summary>
+<summary>Solver speed: Native vs WASM vs User-Agent spoof vs JavaScript</summary>
 
-<!-- TODO: record and embed GIF showing NoScript/uBlock "block JS" enabled while Anubis Fast still clears the checkpoint, e.g. ./product-page/demo-no-js.gif -->
+| Solver | Median, challenge to unlocked page | Median solve time | Notes |
+| --- | --- | --- | --- |
+| Native | 66 ms | not reported | Shells out to `anubis-fetch`; no browser-side hashing loop. |
+| WASM | 253 ms | 201 ms | Go/WASM worker, runs entirely in-tab. |
+| User-Agent spoof | not measured | not measured | Tries one non-browser User-Agent before doing proof-of-work in JavaScript. It only rewrites `https://` requests, and the test site is plain `http://`. |
+| JavaScript | 1.09 s | 1.04 s | Web Crypto fallback. |
+
+Measured with `npm run measure:solvers`: Anubis 1.27.0 with the `fast` algorithm at difficulty 4 (Anubis' default), 20 runs per solver after one warm-up run, page JavaScript off, Firefox 156 on an 8-core aarch64 Linux machine. "Challenge to unlocked page" runs from the request that gets the challenge to the request that gets the site. "Solve time" is the time Anubis Fast reports to Anubis when it submits the answer; the native host solves outside the browser, so it has none. The number of hashes a challenge needs is random, so single runs vary widely: JavaScript took anywhere from 125 ms to 7.4 s.
+
+</details>
+
+<details>
+<summary>Switching the solver from the toolbar</summary>
+
+![Clicking the toolbar button cycles the badge through N, W, UA and JS.](./product-page/demo-solver-mode.gif)
 
 </details>
 
@@ -120,7 +129,9 @@ extension/solvers/        WASM worker, WASM binary, and JS fallback solver
 wasm/                     first-party Go/WASM solver source
 native/                   Go native-messaging host
 native/providers/         provider dispatch and PoW adapters
-scripts/                  build helpers (WASM compile)
+scripts/                  build helpers (WASM compile), README captures, solver timing
+tests/live/               live Firefox tests against a real Anubis
+product-page/             README GIFs and stills (generated)
 ```
 
 ## Permissions
@@ -216,6 +227,34 @@ Firefox restarts, so re-load after every restart during development.
 For the local `slaughter.pro` stack, start the site from its checkout
 (`nix develop -c podman-compose up --build`, see `../slaughter.pro/ANUBIS.md`)
 and open `http://localhost:8080/` through the Anubis front door.
+
+## Tests
+
+```sh
+nix develop -c npm run typecheck   # extension, plus tests and scripts
+nix develop -c npm run test:live   # real Firefox against a real Anubis
+```
+
+The live tests start a local site behind a real Anubis (from nixpkgs), then a throwaway Firefox (vanilla, from nixpkgs) on a private Xvfb display with `build/extension/` loaded as a temporary add-on. Firefox reaches the site as `http://forge.example/`. With page JavaScript turned off, they check that the challenge is solved in WASM and JavaScript mode, that the same Firefox without Anubis Fast stays stuck on the challenge, and that the toolbar button cycles the solver modes. The tests are in `tests/live/`; the harness is [firefox-addon-live](https://github.com/mikenrafter/firefox-addon-live), a flake input that `nix develop` links in as an npm dependency.
+
+## README screenshots and GIFs
+
+```sh
+nix develop -c npm run capture:readme                # every scene
+nix develop -c npm run capture:readme -- solver-mode # only some scenes
+```
+
+This rebuilds the add-on, replays each scene in a live Firefox, and writes a GIF and a PNG still per scene to `product-page/`. Scenes are in `scripts/capture-readme-assets.ts`.
+
+The solver speed table comes from:
+
+```sh
+nix develop -c npm run measure:solvers -- --runs 20 --difficulty 4
+ANUBIS_FAST_HOST=$(nix build --print-out-paths)/bin/anubis-fast-host \
+  nix develop -c npm run measure:solvers -- --runs 20   # include Native
+```
+
+Native mode needs the native host. The script writes its manifest under a temporary `HOME` used only by that Firefox, so `~/.mozilla` is left alone.
 
 ---
 

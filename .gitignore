@@ -7,3 +7,5 @@
 /.pre-commit-config.yaml
 /extension/solvers/anubis-solver.wasm
 /extension/solvers/wasm_exec.js
+# Linked by `nix develop` (see flake.nix).
+/.firefox-addon-live

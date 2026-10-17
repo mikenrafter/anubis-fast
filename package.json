@@ -2,18 +2,26 @@
   "name": "anubis-fast",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "description": "Anubis Fast Firefox extension and native messaging bridge",
   "scripts": {
     "build:solver": "bash scripts/build-wasm.sh",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.live.json",
     "build:extension": "bash scripts/build-extension.sh",
     "check": "npm run typecheck",
     "build:firefox": "npm run build:solver && npm run build:extension && web-ext build --source-dir build/extension --artifacts-dir dist --overwrite-dest",
-    "build:firefox:xpi": "npm run build:firefox && node -e \"const fs=require('node:fs');const path=require('node:path');const dist='dist';const zips=fs.readdirSync(dist).filter((file)=>file.endsWith('.zip')).sort();if(zips.length===0)throw new Error('No zip artifact found in dist');const zipPath=path.join(dist,zips.at(-1));const xpiPath=zipPath.replace(/\\.zip$/,'.xpi');fs.copyFileSync(zipPath,xpiPath);console.log('Created',xpiPath);\""
+    "build:firefox:xpi": "npm run build:firefox && node -e \"const fs=require('node:fs');const path=require('node:path');const dist='dist';const zips=fs.readdirSync(dist).filter((file)=>file.endsWith('.zip')).sort();if(zips.length===0)throw new Error('No zip artifact found in dist');const zipPath=path.join(dist,zips.at(-1));const xpiPath=zipPath.replace(/\\.zip$/,'.xpi');fs.copyFileSync(zipPath,xpiPath);console.log('Created',xpiPath);\"",
+    "test:live": "npm run build:solver && npm run build:extension && vitest run --config vitest.live.config.ts",
+    "capture:readme": "npm run build:solver && npm run build:extension && tsx scripts/capture-readme-assets.ts",
+    "measure:solvers": "npm run build:solver && npm run build:extension && tsx scripts/measure-solver-speed.ts"
   },
   "devDependencies": {
     "@types/firefox-webext-browser": "^120.0.0",
+    "@types/node": "^24.5.2",
+    "firefox-addon-live": "file:.firefox-addon-live",
+    "tsx": "^4.23.15",
     "typescript": "^5.7.2",
+    "vitest": "^3.2.4",
     "web-ext": "^8.9.0"
   }
 }

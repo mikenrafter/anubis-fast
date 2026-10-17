@@ -6,9 +6,15 @@
     flake-utils.url = "github:numtide/flake-utils";
     anubis-fetch.url = "github:mikenrafter/anubis-fetch";
     anubis-fetch.inputs.nixpkgs.follows = "nixpkgs";
+    # Live Firefox sessions for the Marionette tests and README captures.
+    firefox-addon-live = {
+      url = "github:mikenrafter/firefox-addon-live";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.flake-utils.follows = "flake-utils";
+    };
   };
 
-  outputs = { self, nixpkgs, flake-utils, anubis-fetch, ... }:
+  outputs = { self, nixpkgs, flake-utils, anubis-fetch, firefox-addon-live, ... }:
     let
       homeModule = { config, lib, pkgs, ... }:
         let
@@ -57,15 +63,20 @@
         packages.default = package;
         packages.host = host;
 
-        devShells.default = pkgs.mkShell {
+        # Node, vanilla Firefox (FIREFOX_BINARY), Xvfb, ffmpeg, ImageMagick and
+        # xdotool, plus the firefox-addon-live link that package.json uses.
+        # Anubis is the real challenge server the live tests and captures run.
+        devShells.default = firefox-addon-live.lib.devShell {
+          inherit pkgs;
           packages = [
             pkgs.go
-            pkgs.nodejs_22
             pkgs.web-ext
+            pkgs.anubis
           ];
 
           shellHook = ''
             echo "Anubis Fast dev shell ready: npm install && npm run build:firefox"
+            echo "Live Firefox tests: npm run test:live   README captures: npm run capture:readme"
           '';
         };
 

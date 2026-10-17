@@ -1,3 +1,8 @@
 inputs:
   git-hooks:
     url: github:cachix/git-hooks.nix
+  firefox-addon-live:
+    url: github:mikenrafter/firefox-addon-live
+    inputs:
+      nixpkgs:
+        follows: nixpkgs
