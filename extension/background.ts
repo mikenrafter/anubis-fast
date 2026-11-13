@@ -73,7 +73,7 @@ interface SpoofRequest {
 
 let host: browser.runtime.Port | undefined;
 const pending = new Map<string, PendingRequest>();
-let solverMode: SolverMode = 'native';
+let solverMode: SolverMode = 'wasm';
 const solverModes: SolverMode[] = ['native', 'wasm', 'spoof', 'javascript'];
 const spoofRequests = new Map<number, SpoofRequest>();
 const browserFallbacks = new Map<string, 'javascript'>();

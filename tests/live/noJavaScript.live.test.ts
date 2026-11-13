@@ -6,7 +6,7 @@
  */
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import type { FirefoxSession } from 'firefox-addon-live'
+import { waitFor, type FirefoxSession } from 'firefox-addon-live'
 import {
 	CHALLENGE_TITLE,
 	SITE_TITLE,
@@ -40,6 +40,15 @@ beforeAll(async () => {
 afterAll(async () => {
 	await session?.close()
 	await site?.stop()
+})
+
+// Runs first: the later tests change the saved solver.
+describe('fresh install', () => {
+	it('starts in WASM mode with no saved choice', async () => {
+		// AMO users have no native helper, so the default must be a solver that ships in the add-on.
+		expect(await badgeText(session)).toBe('W')
+		expect(await session.asExtension('return (await browser.storage.local.get("solverMode")).solverMode')).toBeNull()
+	})
 })
 
 describe('page JavaScript disabled', () => {
@@ -94,5 +103,19 @@ describe('toolbar button', () => {
 		expect(seen).toEqual(['N', 'W', 'UA', 'JS', 'N'])
 		await chooseSolverMode(session, 'wasm')
 		expect(await session.asExtension('return (await browser.storage.local.get("solverMode")).solverMode')).toBe('wasm')
+	})
+
+	it('keeps a saved choice over the WASM default when the add-on restarts', async () => {
+		await chooseSolverMode(session, 'native')
+		// Mark the badge, then restart the add-on. The restart closes the page that
+		// asked for it, so that call may fail.
+		await session.asExtension(`
+			await browser.browserAction.setBadgeText({ text: '?' })
+			browser.runtime.reload()
+			return true`).catch(() => undefined)
+		// The restarted background sets W at load; only the saved choice turns it to N.
+		await waitFor(async () => await badgeText(session).catch(() => undefined) === 'N' ? true : undefined,
+			15_000, 'The saved Native choice did not survive a restart')
+		expect(await session.asExtension('return (await browser.storage.local.get("solverMode")).solverMode')).toBe('native')
 	})
 })

@@ -62,17 +62,18 @@ mutations for 30 seconds in case the challenge markup appears later.
 
 Once a challenge is found, the extension extracts the challenge JSON, the
 page's cookies, and the browser's User-Agent, then asks the background script
-to solve it. The background script tries, in order:
+to solve it with the selected solver (WASM unless you pick another). The
+solvers, and the order the background script falls back through them:
 
-1. **Native** — hands the challenge to the local Go native-messaging host,
-   which shells out to the forked `anubis-fetch` binary and returns solved
-   cookies. The content script does not reload the page itself; the
-   background script installs the cookies via `browser.cookies.set` and then
-   navigates the tab.
-2. **WASM** — if the native host is unavailable (or the native solver mode
-   isn't selected), a packaged Go/WASM solver runs in a Web Worker and
-   submits Anubis' `pass-challenge` endpoint directly from the tab, so the
-   browser receives the auth cookie itself.
+1. **Native** (only when selected) — hands the challenge to the local Go
+   native-messaging host, which shells out to the forked `anubis-fetch`
+   binary and returns solved cookies. The content script does not reload the
+   page itself; the background script installs the cookies via
+   `browser.cookies.set` and then navigates the tab.
+2. **WASM** (the default) — a packaged Go/WASM solver runs in a Web Worker
+   and submits Anubis' `pass-challenge` endpoint directly from the tab, so
+   the browser receives the auth cookie itself. Native mode also falls back
+   to it when the native host is unavailable.
 3. **User-Agent spoof** — if WASM fails, Anubis Fast makes one retry with a
    random non-browser User-Agent. Some Anubis deployments let requests with
    non-browser User-Agents through without a proof-of-work challenge. This is
@@ -91,7 +92,8 @@ native-messaging pipe to the native host — there is no remote telemetry.
 ## Solver mode toggle
 
 Click the toolbar icon to cycle the active solver backend: **N**ative → **W**asm
-→ **UA** spoof → **JS** → back to Native. The badge shows the current mode and
+→ **UA** spoof → **JS** → back to Native. A new install starts on **W**asm,
+which needs nothing outside the add-on. The badge shows the current mode and
 color, and the choice persists in `browser.storage.local`. If native mode is
 selected but the host disconnects mid-request, pending requests automatically
 retry with the browser solver. The browser fallback tries WASM, then one UA
@@ -232,7 +234,7 @@ nix develop -c npm run typecheck   # extension, plus tests and scripts
 nix develop -c npm run test:live   # real Firefox against a real Anubis
 ```
 
-The live tests start a local site behind a real Anubis (from nixpkgs), then a throwaway Firefox (vanilla, from nixpkgs) on a private Xvfb display with `build/extension/` loaded as a temporary add-on. Firefox reaches the site as `http://forge.example/`. With page JavaScript turned off, they check that the challenge is solved in WASM and JavaScript mode, that the same Firefox without Anubis Fast stays stuck on the challenge, and that the toolbar button cycles the solver modes. The tests are in `tests/live/`; the harness is [firefox-addon-live](https://github.com/mikenrafter/firefox-addon-live), a flake input that `nix develop` links in as an npm dependency.
+The live tests start a local site behind a real Anubis (from nixpkgs), then a throwaway Firefox (vanilla, from nixpkgs) on a private Xvfb display with `build/extension/` loaded as a temporary add-on. Firefox reaches the site as `http://forge.example/`. With page JavaScript turned off, they check that the challenge is solved in WASM and JavaScript mode, that the same Firefox without Anubis Fast stays stuck on the challenge, that a new install starts in WASM mode, and that the toolbar button cycles the solver modes and keeps the saved choice across an add-on restart. The tests are in `tests/live/`; the harness is [firefox-addon-live](https://github.com/mikenrafter/firefox-addon-live), a flake input that `nix develop` links in as an npm dependency.
 
 ## README screenshots and GIFs
 
