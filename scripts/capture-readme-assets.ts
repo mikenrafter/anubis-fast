@@ -5,6 +5,7 @@
  *   no-js        page JavaScript is off (about:config); opening a site behind a
  *                real Anubis shows the challenge, which Anubis Fast solves
  *   solver-mode  clicking the toolbar button cycles the solver: N, W, UA, JS
+ *                (GIF of the toolbar corner; PNG of the whole window on W)
  *
  * The site is a local page behind a real Anubis (from nixpkgs), reached as
  * http://forge.example/. The harness is firefox-addon-live (a flake input; see
@@ -107,7 +108,8 @@ try {
 						await session.pointerClick()
 						if (mode === 'wasm') {
 							await sleep(400)
-							await session.screenshot(kit.out('demo-solver-mode.png'), crop, crop.width * 2)
+							// The still is the whole window (640x450, the size AMO shows), not the toolbar strip.
+							await kit.still('demo-solver-mode')
 						}
 					}
 					await sleep(1_200)

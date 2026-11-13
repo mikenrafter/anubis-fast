@@ -243,7 +243,7 @@ nix develop -c npm run capture:readme                # every scene
 nix develop -c npm run capture:readme -- solver-mode # only some scenes
 ```
 
-This rebuilds the add-on, replays each scene in a live Firefox, and writes a GIF and a PNG still per scene to `product-page/`. Scenes are in `scripts/capture-readme-assets.ts`.
+This rebuilds the add-on, replays each scene in a live Firefox, and writes a GIF and a 640x450 PNG still per scene to `product-page/`. Scenes are in `scripts/capture-readme-assets.ts`.
 
 The solver speed table comes from:
 
