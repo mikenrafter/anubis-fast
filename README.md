@@ -144,10 +144,10 @@ product-page/             README GIFs and stills (generated)
 | `webRequest`, `webRequestBlocking` | change the User-Agent header on the one UA spoof retry |
 | `<all_urls>` | Anubis can front any site; detection must run everywhere |
 
-The manifest also declares the `websiteActivity` and `websiteContent` data
-collection categories because the extension reads challenge pages, URLs, and
-cookies locally and may pass those values to the locally installed native
-helper. Nothing is sent to a remote service.
+The manifest declares no data collection (`"required": ["none"]`). The
+extension reads challenge pages, URLs, and cookies locally and may pass those
+values to the locally installed native helper, but nothing is sent to the
+developer or any other remote service.
 
 ---
 
