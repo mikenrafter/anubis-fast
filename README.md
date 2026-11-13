@@ -331,11 +331,15 @@ The User-Agent spoof fallback is based on the approach used by
 challenged host with a random non-browser User-Agent so Anubis deployments
 that classify requests by User-Agent may pass it through.
 
-The extension icon (`extension/icon.svg`) is composited from two icons by
-[SVG Repo](https://www.svgrepo.com/):
+The extension icon (`extension/icon.svg`) is composited from two icons found on
+[SVG Repo](https://www.svgrepo.com/). Their licenses, as SVG Repo listed them on
+2026-11-12:
 
-- [Globe Alt](https://www.svgrepo.com/svg/508084/globe-alt) (CC0)
-- [Fireball 3](https://www.svgrepo.com/svg/478806/fireball-3)
+- [Fireball 3](https://www.svgrepo.com/svg/478806/fireball-3) by Icooon Mono:
+  PD License (public domain).
+- [Globe Alt](https://www.svgrepo.com/svg/508084/globe-alt) by scarlab: MIT
+  License. (An August 2025 copy of the page listed it as CC0, uploaded by SVG
+  Repo.) Its MIT permission notice is the same text as [LICENSE](./LICENSE).
 
 ## License
 
