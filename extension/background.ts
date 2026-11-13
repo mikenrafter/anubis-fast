@@ -255,7 +255,6 @@ async function solveInBrowser(message: BackgroundChallengeMessage, tabId: number
 
 console.info('[Anubis Fast] background script loaded', { extensionId: browser.runtime.id });
 setSolverBadge();
-browser.notifications.create({ type: 'basic', title: 'Anubis Fast loaded', message: `Extension reloaded at ${new Date().toLocaleTimeString()}`, iconUrl: browser.runtime.getURL('icon.svg') });
 
 function connectHost(): browser.runtime.Port {
   if (host) return host;

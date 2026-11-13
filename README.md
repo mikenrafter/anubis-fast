@@ -100,10 +100,7 @@ spoof, then JavaScript.
 ## Logging
 
 - The content script logs to the protected page's own DevTools console.
-- The background script logs to Firefox's Browser Console (`Ctrl+Shift+J`)
-  and also fires a "Anubis Fast loaded" desktop notification each time it
-  starts, as a visible signal that a reload picked up new code during
-  development.
+- The background script logs to Firefox's Browser Console (`Ctrl+Shift+J`).
 - The native host logs to stderr; see `anubis-fast-host.log` /
   `anubis-fast-host.out` conventions if you redirect it, or run it under
   `about:debugging` and check the connected terminal.
@@ -142,7 +139,7 @@ product-page/             README GIFs and stills (generated)
 | `cookies` | read the page's existing cookies and install the solved auth cookie |
 | `tabs` | navigate the tab once a challenge is solved |
 | `storage` | persist the selected solver mode |
-| `notifications` | the "extension (re)loaded" development signal above |
+| `webRequest`, `webRequestBlocking` | change the User-Agent header on the one UA spoof retry |
 | `<all_urls>` | Anubis can front any site; detection must run everywhere |
 
 The manifest also declares the `websiteActivity` and `websiteContent` data

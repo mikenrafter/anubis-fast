@@ -60,7 +60,6 @@ try {
 			},
 		},
 		setup: async (session) => {
-			await closeAlerts(session)
 			await chooseSolverMode(session, 'wasm')
 		},
 		scenes: {
@@ -131,9 +130,3 @@ async function toolbarCorner(session: FirefoxSession): Promise<Rect> {
 	return { x: Math.max(0, x), y: Math.round(toolbar.y), width, height: Math.round(toolbar.height) }
 }
 
-/** Closes the background script's "Anubis Fast loaded" notification, if Firefox drew one. */
-async function closeAlerts(session: FirefoxSession): Promise<void> {
-	await session.chrome(`
-		for (const alert of Services.wm.getEnumerator('alert:alert')) alert.close()
-		return true`)
-}
