@@ -5,7 +5,11 @@ root_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 out_dir="$root_dir/extension/solvers"
 mkdir -p "$out_dir"
 
-GOOS=js GOARCH=wasm go build -trimpath -o "$out_dir/anubis-solver.wasm" "$root_dir/wasm"
+# Reproducible output: the same Go version gives the same bytes from a git
+# checkout or an unpacked source archive. Without -buildvcs=false, Go stamps
+# the commit and a "dirty" flag into the binary; CGO_ENABLED is recorded too,
+# and its default depends on whether a C compiler is on PATH.
+CGO_ENABLED=0 GOOS=js GOARCH=wasm go build -trimpath -buildvcs=false -o "$out_dir/anubis-solver.wasm" "$root_dir/wasm"
 goroot="$(go env GOROOT)"
 runtime="$goroot/lib/wasm/wasm_exec.js"
 if [[ ! -f "$runtime" ]]; then

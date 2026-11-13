@@ -159,10 +159,39 @@ Build the extension bundle (compiles the WASM solver, then packages with
 TypeScript and `web-ext`):
 
 ```sh
-npm install
-npm run build:firefox       # -> dist/anubis_fast-<version>.zip
+npm ci
+npm run build:firefox       # -> build/extension/ and dist/anubis_fast-<version>.zip
 npm run build:firefox:xpi   # also copies the zip to dist/anubis_fast-<version>.xpi
 ```
+
+`npm run build:firefox` runs three steps, which you can also run one at a time:
+
+1. `npm run build:solver` compiles `wasm/main.go` to
+   `extension/solvers/anubis-solver.wasm` (`GOOS=js GOARCH=wasm`, `-trimpath`,
+   `-buildvcs=false`, `CGO_ENABLED=0`) and copies `wasm_exec.js` unchanged from
+   the same Go toolchain. Both files are generated and gitignored.
+2. `npm run build:extension` compiles the TypeScript in `extension/` with
+   `tsc` (no bundler, no minifier) into `build/extension/` and copies the
+   manifest, icon and solver files there.
+3. `web-ext build` zips `build/extension/` into `dist/`.
+
+Tools: Go 1.26.7, Node 22 or later, and the npm packages in
+`package-lock.json` (TypeScript, web-ext). `nix develop` provides the exact Go
+and Node that `flake.lock` pins: `nix develop -c npm ci`, then
+`nix develop -c npm run build:firefox`. Without Nix, put Go 1.26.7 on `PATH`.
+
+The WASM build is reproducible. Go records its own version in the output, so
+only Go 1.26.7 gives the published bytes; with it, a git checkout and an
+unpacked source archive build the same file on x86_64 and aarch64 Linux:
+
+```text
+d71d58b074997db4bdfc8bcf0ae1c14c95af7277c2b229a2bba5976418fa2716  extension/solvers/anubis-solver.wasm
+0c949f4996f9a89698e4b5c586de32249c3b69b7baadb64d220073cc04acba14  extension/solvers/wasm_exec.js
+```
+
+`npm ci` links `.firefox-addon-live`, the live-test harness, which
+`nix develop` creates. Without Nix the link stays empty; that only affects
+`test:live` and `capture:readme`, not the add-on build.
 
 The extension source lives in TypeScript under `extension/`. `npm run typecheck`
 uses strict compiler settings and is the check-in gate.
