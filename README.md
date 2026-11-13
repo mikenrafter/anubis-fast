@@ -306,5 +306,9 @@ that classify requests by User-Agent may pass it through.
 The extension icon (`extension/icon.svg`) is composited from two icons by
 [SVG Repo](https://www.svgrepo.com/):
 
-- [Globe Alt](https://www.svgrepo.com/svg/508084/globe-alt)
+- [Globe Alt](https://www.svgrepo.com/svg/508084/globe-alt) (CC0)
 - [Fireball 3](https://www.svgrepo.com/svg/478806/fireball-3)
+
+## License
+
+Anubis Fast is released under the [MIT License](./LICENSE).

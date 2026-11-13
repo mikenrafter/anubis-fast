@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "description": "Anubis Fast Firefox extension and native messaging bridge",
+  "license": "MIT",
   "scripts": {
     "build:solver": "bash scripts/build-wasm.sh",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.live.json",
